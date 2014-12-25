@@ -1,10 +1,11 @@
 #![feature(phase)]
 
+extern crate core;
 #[phase(plugin)]
-extern crate lazy_static;
+extern crate lazy_static_core;
 use std::collections::HashMap;
 
-lazy_static! {
+lazy_static_core! {
     static ref NUMBER: uint = times_two(3);
     static ref ARRAY_BOXES: [Box<uint>, ..3] = [box 1, box 2, box 3];
     static ref STRING: String = "hello".to_string();
@@ -39,7 +40,7 @@ fn test_repeat() {
 }
 
 mod visibility {
-    lazy_static! {
+    lazy_static_core! {
         pub static ref FOO: Box<uint> = box 0u;
     }
 }

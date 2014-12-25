@@ -35,6 +35,7 @@ Using the macro:
 ```rust
 #![feature(phase)]
 
+extern crate core; //required
 #[phase(plugin)]
 extern crate lazy_static_core;
 
@@ -76,6 +77,8 @@ define uninitialized `static mut` values.
 
 #![feature(macro_rules)]
 
+#[cfg(test)] extern crate std;
+
 #[macro_export]
 macro_rules! lazy_static_core {
     (static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
@@ -86,20 +89,20 @@ macro_rules! lazy_static_core {
     };
     ($VIS:ident static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
         lazy_static_core!(MAKE TY $VIS $N);
-        impl core::ops::Deref<$T> for $N {
+        impl ::core::ops::Deref<$T> for $N {
             fn deref<'a>(&'a self) -> &'a $T {
                 use core::mem::transmute;
-                use core::atomic::{AtomicBool, INIT_ATOMIC_BOOL};
+                use core::atomic::{AtomicBool, INIT_ATOMIC_BOOL, Ordering};
                 use core::kinds::Sync;
 
                 #[inline(always)]
                 fn require_sync<T: Sync>(_: &T) { }
                 
                 static mut data: *const $T = 0 as *const $T;
-                static initialized: AtomicBool = INIT_ATOMIC_BOOL;
+                static INITIALIZED: AtomicBool = INIT_ATOMIC_BOOL;
 
-                if initialized.compare_and_swap(false, true, Ordering::SeqCst) == false {
-                    unsafe{data = mem::transmute::<Box<$T>, *const $T>(box() ($e))};
+                if INITIALIZED.compare_and_swap(false, true, Ordering::SeqCst) == false {
+                    unsafe{data = transmute::<Box<$T>, *const $T>(box() ($e))};
                 }
 
                 let static_ref = unsafe {&*data};
@@ -113,12 +116,14 @@ macro_rules! lazy_static_core {
         #[allow(non_camel_case_types)]
         #[allow(dead_code)]
         pub struct $N {__private_field: ()}
+        #[allow(dead_code)]
         pub static $N: $N = $N {__private_field: ()};
     };
     (MAKE TY PRIV $N:ident) => {
         #[allow(non_camel_case_types)]
         #[allow(dead_code)]
         struct $N {__private_field: ()}
+        #[allow(dead_code)]
         static $N: $N = $N {__private_field: ()};
     };
     () => ()
