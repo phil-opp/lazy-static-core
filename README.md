@@ -3,6 +3,8 @@ lazy-static.rs
 
 [![Travis-CI Status](https://travis-ci.org/phil-opp/lazy-static-core.png?branch=master)](https://travis-ci.org/phil-opp/lazy-static-core)
 
+DON'T USE! Seems to have a bug (tests panic sometimes at access of statics)...
+
 A macro for declaring lazily evaluated statics in Rust that doesn't depend on the standard library.
 
 Using this macro, it is possible to have `static`s that require code to be

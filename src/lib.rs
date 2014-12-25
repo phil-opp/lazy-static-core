@@ -1,4 +1,6 @@
 /*!
+DON'T USE! Seems to have a bug (tests panic sometimes at access of statics)...
+
 A macro for declaring lazily evaluated statics that doesn't depend on the standard library.
 
 Using this macro, it is possible to have `static`s that require code to be
