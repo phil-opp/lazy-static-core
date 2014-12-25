@@ -1,9 +1,9 @@
 lazy-static.rs
 ==============
 
-[![Travis-CI Status](https://travis-ci.org/Kimundi/lazy-static.rs.png?branch=master)](https://travis-ci.org/Kimundi/lazy-static.rs)
+[![Travis-CI Status](https://travis-ci.org/phil-opp/lazy-static-core.png?branch=master)](https://travis-ci.org/phil-opp/lazy-static-core)
 
-A macro for declaring lazily evaluated statics in Rust.
+A macro for declaring lazily evaluated statics in Rust that doesn't depend on the standard library.
 
 Using this macro, it is possible to have `static`s that require code to be
 executed at runtime in order to be initialized.
@@ -13,7 +13,7 @@ as well as anything that requires function calls to be computed.
 # Syntax
 
 ```rust
-lazy_static! {
+lazy_static_core! {
     [pub] static ref NAME_1: TYPE_1 = EXPR_1;
     [pub] static ref NAME_2: TYPE_2 = EXPR_2;
     ...
@@ -29,7 +29,7 @@ unique type that implements `Deref<TYPE>` and stores it in a static with name `N
 On first deref, `EXPR` gets evaluated and stored internally, such that all further derefs
 can return a reference to the same object.
 
-Like regular `static mut`s, this macro only works for types that fulfill the `Share`
+Like regular `static mut`s, this macro only works for types that fulfill the `Sync`
 trait.
 
 # Example
@@ -40,11 +40,11 @@ Using the macro:
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate lazy_static;
+extern crate lazy_static_core;
 
 use std::collections::HashMap;
 
-lazy_static! {
+lazy_static_core! {
     static ref HASHMAP: HashMap<uint, &'static str> = {
         let mut m = HashMap::new();
         m.insert(0u, "foo");

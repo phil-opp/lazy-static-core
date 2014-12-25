@@ -1,16 +1,16 @@
 [package]
 
-name = "lazy_static"
-version = "0.1.2"
-authors = [ "Marvin Löbel <loebel.marvin@gmail.com>" ]
+name = "lazy_static_core"
+version = "0.0.1"
+authors = [ "Marvin Löbel <loebel.marvin@gmail.com>", "Philipp Oppermann <dev@phil-opp.com" ]
 
 # A short blurb about the package. This is not rendered in any format when
 # uploaded to crates.io (aka this is not markdown)
-description = "A macro for declaring lazily evaluated statics in Rust."
+description = "A macro for declaring lazily evaluated statics in Rust that doesn't depend on the standard library."
 
 # These URLs point to more information about the repository
-documentation = "http://rust-ci.org/Kimundi/lazy-static.rs/doc/lazy_static/"
-repository = "https://github.com/Kimundi/lazy-static.rs"
+documentation = "https://github.com/phil-opp/lazy-static-core/doc/lazy_static/"
+repository = "https://github.com/phil-opp/lazy-static-core"
 
 # This points to a file in the repository (relative to this Cargo.toml). The
 # contents of this file are stored and indexed in the registry.
@@ -27,4 +27,4 @@ license = "MIT"
 
 [lib]
 
-name = "lazy_static"
+name = "lazy_static_core"

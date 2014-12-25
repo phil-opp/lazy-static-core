@@ -1,5 +1,5 @@
 /*!
-A macro for declaring lazily evaluated statics.
+A macro for declaring lazily evaluated statics that doesn't depend on the standard library.
 
 Using this macro, it is possible to have `static`s that require code to be
 executed at runtime in order to be initialized.
@@ -9,7 +9,7 @@ as well as anything that requires function calls to be computed.
 # Syntax
 
 ```ignore
-lazy_static! {
+lazy_static_core! {
     [pub] static ref NAME_1: TYPE_1 = EXPR_1;
     [pub] static ref NAME_2: TYPE_2 = EXPR_2;
     ...
@@ -36,11 +36,11 @@ Using the macro:
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate lazy_static;
+extern crate lazy_static_core;
 
 use std::collections::HashMap;
 
-lazy_static! {
+lazy_static_core! {
     static ref HASHMAP: HashMap<uint, &'static str> = {
         let mut m = HashMap::new();
         m.insert(0u, "foo");
@@ -64,47 +64,50 @@ fn main() {
 # Implementation details
 
 The `Deref` implementation uses a hidden `static mut` that is guarded by a atomic check
-using the `sync::Once` abstraction. All lazily evaluated values are currently
+using `core::atomic::AtomicBool`. All lazily evaluated values are currently
 put in a heap allocated box, due to the Rust language currently not providing any way to
 define uninitialized `static mut` values.
 
 */
+
+#![no_std]
 
 #![crate_type = "dylib"]
 
 #![feature(macro_rules)]
 
 #[macro_export]
-macro_rules! lazy_static {
+macro_rules! lazy_static_core {
     (static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
-        lazy_static!(PRIV static ref $N : $T = $e; $($t)*);
+        lazy_static_core!(PRIV static ref $N : $T = $e; $($t)*);
     };
     (pub static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
-        lazy_static!(PUB static ref $N : $T = $e; $($t)*);
+        lazy_static_core!(PUB static ref $N : $T = $e; $($t)*);
     };
     ($VIS:ident static ref $N:ident : $T:ty = $e:expr; $($t:tt)*) => {
-        lazy_static!(MAKE TY $VIS $N);
-        impl Deref<$T> for $N {
+        lazy_static_core!(MAKE TY $VIS $N);
+        impl core::ops::Deref<$T> for $N {
             fn deref<'a>(&'a self) -> &'a $T {
-                use std::sync::{Once, ONCE_INIT};
-                use std::mem::transmute;
+                use core::mem::transmute;
+                use core::atomic::{AtomicBool, INIT_ATOMIC_BOOL};
+                use core::kinds::Sync;
 
                 #[inline(always)]
                 fn require_sync<T: Sync>(_: &T) { }
+                
+                static mut data: *const $T = 0 as *const $T;
+                static initialized: AtomicBool = INIT_ATOMIC_BOOL;
 
-                unsafe {
-                    static mut s: *const $T = 0 as *const $T;
-                    static mut ONCE: Once = ONCE_INIT;
-                    ONCE.doit(|| {
-                        s = transmute::<Box<$T>, *const $T>(box() ($e));
-                    });
-                    let static_ref = &*s;
-                    require_sync(static_ref);
-                    static_ref
+                if initialized.compare_and_swap(false, true, Ordering::SeqCst) == false {
+                    unsafe{data = mem::transmute::<Box<$T>, *const $T>(box() ($e))};
                 }
+
+                let static_ref = unsafe {&*data};
+                require_sync(static_ref);
+                static_ref                
             }
         }
-        lazy_static!($($t)*);
+        lazy_static_core!($($t)*);
     };
     (MAKE TY PUB $N:ident) => {
         #[allow(non_camel_case_types)]
